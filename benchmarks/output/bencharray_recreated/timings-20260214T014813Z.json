@@ -1,0 +1,147 @@
+{
+  "timestamp_utc": "20260214T014813Z",
+  "source": "bencharray_recreated.py",
+  "groups": [
+    "arith",
+    "fold",
+    "group",
+    "replicate",
+    "reshape",
+    "reverse",
+    "search",
+    "select",
+    "sort",
+    "transpose"
+  ],
+  "flat_exp_range": [
+    8,
+    8
+  ],
+  "matrix_exp_range": [
+    3,
+    3
+  ],
+  "rows": [
+    {
+      "group": "arith",
+      "case": "times_plus",
+      "source": "(x \u00d7 x) + y",
+      "mode": "compiled",
+      "size": 256,
+      "size_label": "2^8",
+      "elements": 256,
+      "repeats": 20,
+      "seconds": 1.8356800137553363e-05
+    },
+    {
+      "group": "arith",
+      "case": "matrix_plus",
+      "source": "x + y",
+      "mode": "compiled",
+      "size": 8,
+      "size_label": "2^3x2^3",
+      "elements": 64,
+      "repeats": 20,
+      "seconds": 3.0146498829708435e-06
+    },
+    {
+      "group": "fold",
+      "case": "sum",
+      "source": "0 +\u00b4 x",
+      "mode": "compiled",
+      "size": 256,
+      "size_label": "2^8",
+      "elements": 256,
+      "repeats": 20,
+      "seconds": 3.622250005719252e-06
+    },
+    {
+      "group": "group",
+      "case": "group_monadic",
+      "source": "\u2294 x",
+      "mode": "evaluate",
+      "size": 256,
+      "size_label": "2^8",
+      "elements": 256,
+      "repeats": 20,
+      "seconds": 0.0161271642000429
+    },
+    {
+      "group": "replicate",
+      "case": "mask_replicate",
+      "source": "m / x",
+      "mode": "evaluate",
+      "size": 256,
+      "size_label": "2^8",
+      "elements": 256,
+      "repeats": 20,
+      "seconds": 0.011977503149864788
+    },
+    {
+      "group": "reshape",
+      "case": "reshape_square",
+      "source": "s \u294a x",
+      "mode": "evaluate",
+      "size": 8,
+      "size_label": "2^3x2^3",
+      "elements": 64,
+      "repeats": 20,
+      "seconds": 3.283289988758043e-05
+    },
+    {
+      "group": "reverse",
+      "case": "reverse_flat",
+      "source": "\u233d x",
+      "mode": "evaluate",
+      "size": 256,
+      "size_label": "2^8",
+      "elements": 256,
+      "repeats": 20,
+      "seconds": 8.577049993618856e-06
+    },
+    {
+      "group": "search",
+      "case": "member_of",
+      "source": "x \u220a y",
+      "mode": "evaluate",
+      "size": 256,
+      "size_label": "2^8",
+      "elements": 256,
+      "repeats": 20,
+      "seconds": 0.055915397799981295
+    },
+    {
+      "group": "select",
+      "case": "index_select",
+      "source": "i \u228f x",
+      "mode": "evaluate",
+      "size": 256,
+      "size_label": "2^8",
+      "elements": 256,
+      "repeats": 20,
+      "seconds": 0.0018772088500554674
+    },
+    {
+      "group": "sort",
+      "case": "sort_up",
+      "source": "\u2227 x",
+      "mode": "evaluate",
+      "size": 256,
+      "size_label": "2^8",
+      "elements": 256,
+      "repeats": 20,
+      "seconds": 3.6069949965167324e-05
+    },
+    {
+      "group": "transpose",
+      "case": "transpose_square",
+      "source": "\u2349 x",
+      "mode": "evaluate",
+      "size": 8,
+      "size_label": "2^3x2^3",
+      "elements": 64,
+      "repeats": 20,
+      "seconds": 1.4799699965806212e-05
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "source_results": "benchmarks/output/monad_dyad/20260216T182029Z/results.json",
+  "n": 10000,
+  "reference_case": {
+    "section": "modifier",
+    "name": "constant",
+    "n": 10000
+  },
+  "top_cases": [
+    {
+      "section": "modifier",
+      "name": "fold_plus",
+      "n": 10000,
+      "baseline_mean_ms": 0.0077856299751243785,
+      "baseline_ratio": 2.9990492126218027
+    },
+    {
+      "section": "dyadic",
+      "name": "minus",
+      "n": 10000,
+      "baseline_mean_ms": 0.005436595166628882,
+      "baseline_ratio": 2.0941935984520477
+    },
+    {
+      "section": "dyadic",
+      "name": "divide",
+      "n": 10000,
+      "baseline_mean_ms": 0.005246430833112933,
+      "baseline_ratio": 2.0209416976396604
+    },
+    {
+      "section": "dyadic",
+      "name": "times",
+      "n": 10000,
+      "baseline_mean_ms": 0.00502277354499662,
+      "baseline_ratio": 1.9347882051200473
+    },
+    {
+      "section": "monadic",
+      "name": "transpose",
+      "n": 10000,
+      "baseline_mean_ms": 0.004511964968870854,
+      "baseline_ratio": 1.7380231311407934
+    }
+  ]
+}

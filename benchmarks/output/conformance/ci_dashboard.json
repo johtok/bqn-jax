@@ -1,0 +1,210 @@
+{
+  "summary": [
+    {
+      "name": "spec",
+      "tests_run": 470,
+      "passed": 470,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "executable": 470,
+      "pass_rate": 100.0,
+      "status": "pass"
+    },
+    {
+      "name": "runtime",
+      "tests_run": 126,
+      "passed": 126,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "executable": 126,
+      "pass_rate": 100.0,
+      "status": "pass"
+    },
+    {
+      "name": "jax-ir",
+      "tests_run": 21,
+      "passed": 21,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "executable": 21,
+      "pass_rate": 100.0,
+      "status": "pass"
+    },
+    {
+      "name": "diff-cbqn",
+      "tests_run": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "executable": 1,
+      "pass_rate": 100.0,
+      "status": "pass"
+    }
+  ],
+  "spec_sections": [
+    {
+      "page": "types.html",
+      "title": "Types",
+      "url": "https://mlochbaum.github.io/BQN/spec/types.html",
+      "stats": {
+        "name": "types.html",
+        "tests_run": 5,
+        "passed": 5,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "executable": 5,
+        "pass_rate": 100.0,
+        "status": "pass"
+      }
+    },
+    {
+      "page": "token.html",
+      "title": "Token",
+      "url": "https://mlochbaum.github.io/BQN/spec/token.html",
+      "stats": {
+        "name": "token.html",
+        "tests_run": 14,
+        "passed": 14,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "executable": 14,
+        "pass_rate": 100.0,
+        "status": "pass"
+      }
+    },
+    {
+      "page": "literal.html",
+      "title": "Literal",
+      "url": "https://mlochbaum.github.io/BQN/spec/literal.html",
+      "stats": {
+        "name": "literal.html",
+        "tests_run": 57,
+        "passed": 57,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "executable": 57,
+        "pass_rate": 100.0,
+        "status": "pass"
+      }
+    },
+    {
+      "page": "grammar.html",
+      "title": "Grammar",
+      "url": "https://mlochbaum.github.io/BQN/spec/grammar.html",
+      "stats": {
+        "name": "grammar.html",
+        "tests_run": 61,
+        "passed": 61,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "executable": 61,
+        "pass_rate": 100.0,
+        "status": "pass"
+      }
+    },
+    {
+      "page": "scope.html",
+      "title": "Scope",
+      "url": "https://mlochbaum.github.io/BQN/spec/scope.html",
+      "stats": {
+        "name": "scope.html",
+        "tests_run": 102,
+        "passed": 102,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "executable": 102,
+        "pass_rate": 100.0,
+        "status": "pass"
+      }
+    },
+    {
+      "page": "evaluate.html",
+      "title": "Evaluate",
+      "url": "https://mlochbaum.github.io/BQN/spec/evaluate.html",
+      "stats": {
+        "name": "evaluate.html",
+        "tests_run": 105,
+        "passed": 105,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "executable": 105,
+        "pass_rate": 100.0,
+        "status": "pass"
+      }
+    },
+    {
+      "page": "primitive.html",
+      "title": "Primitive",
+      "url": "https://mlochbaum.github.io/BQN/spec/primitive.html",
+      "stats": {
+        "name": "primitive.html",
+        "tests_run": 14,
+        "passed": 14,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "executable": 14,
+        "pass_rate": 100.0,
+        "status": "pass"
+      }
+    },
+    {
+      "page": "inferred.html",
+      "title": "Inferred",
+      "url": "https://mlochbaum.github.io/BQN/spec/inferred.html",
+      "stats": {
+        "name": "inferred.html",
+        "tests_run": 6,
+        "passed": 6,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "executable": 6,
+        "pass_rate": 100.0,
+        "status": "pass"
+      }
+    },
+    {
+      "page": "complex.html",
+      "title": "Complex",
+      "url": "https://mlochbaum.github.io/BQN/spec/complex.html",
+      "stats": {
+        "name": "complex.html",
+        "tests_run": 102,
+        "passed": 102,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "executable": 102,
+        "pass_rate": 100.0,
+        "status": "pass"
+      }
+    },
+    {
+      "page": "system.html",
+      "title": "System",
+      "url": "https://mlochbaum.github.io/BQN/spec/system.html",
+      "stats": {
+        "name": "system.html",
+        "tests_run": 4,
+        "passed": 4,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "executable": 4,
+        "pass_rate": 100.0,
+        "status": "pass"
+      }
+    }
+  ]
+}

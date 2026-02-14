@@ -1,0 +1,116 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  validate:
+    name: validate (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+    env:
+      PIXI_FROZEN: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pixi
+        uses: prefix-dev/setup-pixi@v0.8.1
+        with:
+          cache: true
+
+      - name: Lint
+        run: pixi run --frozen lint
+
+      - name: Test
+        run: pixi run --frozen test
+
+      - name: Spec Conformance
+        run: pixi run --frozen conformance
+
+      - name: Full Spec Audit
+        if: runner.os == 'Linux'
+        run: pixi run --frozen spec-audit-strict
+
+      - name: CBQN Catalog Report
+        if: runner.os == 'Linux'
+        run: pixi run --frozen cbqn-catalog
+
+      - name: CI Pass Dashboard
+        if: runner.os == 'Linux'
+        run: pixi run --frozen ci-dashboard
+
+      - name: Build Conda Package (pixi-build-python)
+        if: runner.os == 'Linux'
+        run: pixi build --frozen --target-platform linux-64
+
+      - name: Smoke Test Built Conda Package Install (Pixi)
+        if: runner.os == 'Linux'
+        env:
+          PIXI_FROZEN: "false"
+        shell: bash
+        run: |
+          set -euo pipefail
+          PKG_PATH="$(find .pixi/build -type f -name 'bqn-jax-*.conda' | head -n1)"
+          if [[ -z "${PKG_PATH}" ]]; then
+            echo "No built .conda package found under .pixi/build"
+            exit 1
+          fi
+          PKG_ABS="$(realpath "${PKG_PATH}")"
+          TMP_DIR="$(mktemp -d)"
+          pushd "${TMP_DIR}" >/dev/null
+          pixi init -q
+          pixi add "${PKG_ABS}"
+          pixi run python - <<'PY'
+          import bqn_jax
+          print(bqn_jax.__name__)
+          PY
+          popd >/dev/null
+          rm -rf "${TMP_DIR}"
+
+      - name: Benchmark Stability Gate
+        if: runner.os == 'Linux'
+        run: pixi run --frozen bench-gate
+
+      - name: Benchmark Monad/Dyad Top-5 Gate
+        if: runner.os == 'Linux'
+        run: pixi run --frozen bench-md-gate
+
+      - name: Perf Snapshot (Non-Blocking)
+        if: always() && runner.os == 'Linux'
+        continue-on-error: true
+        run: pixi run --frozen perf-snapshot
+
+      - name: Upload Conformance Artifacts
+        if: always() && runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-and-bench-gate
+          path: benchmarks/output/conformance
+          if-no-files-found: ignore
+
+      - name: Upload Performance Snapshot Artifacts
+        if: always() && runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-snapshots
+          path: benchmarks/output/perf_ci
+          if-no-files-found: ignore
+
+      - name: Upload Conda Package Artifact
+        if: always() && runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: conda-package
+          path: .pixi/build/**/bqn-jax-*.conda
+          if-no-files-found: error

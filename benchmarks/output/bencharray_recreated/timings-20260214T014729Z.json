@@ -1,0 +1,51 @@
+{
+  "timestamp_utc": "20260214T014729Z",
+  "source": "bencharray_recreated.py",
+  "groups": [
+    "arith",
+    "fold"
+  ],
+  "flat_exp_range": [
+    10,
+    10
+  ],
+  "matrix_exp_range": [
+    4,
+    4
+  ],
+  "rows": [
+    {
+      "group": "arith",
+      "case": "times_plus",
+      "source": "(x \u00d7 x) + y",
+      "mode": "compiled",
+      "size": 1024,
+      "size_label": "2^10",
+      "elements": 1024,
+      "repeats": 20,
+      "seconds": 9.070999840332662e-06
+    },
+    {
+      "group": "arith",
+      "case": "matrix_plus",
+      "source": "x + y",
+      "mode": "compiled",
+      "size": 16,
+      "size_label": "2^4x2^4",
+      "elements": 256,
+      "repeats": 20,
+      "seconds": 8.079100007307716e-06
+    },
+    {
+      "group": "fold",
+      "case": "sum",
+      "source": "0 +\u00b4 x",
+      "mode": "compiled",
+      "size": 1024,
+      "size_label": "2^10",
+      "elements": 1024,
+      "repeats": 20,
+      "seconds": 6.224649951036554e-06
+    }
+  ]
+}

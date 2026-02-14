@@ -1,0 +1,196 @@
+{
+  "spec_index_url": "https://mlochbaum.github.io/BQN/spec/index.html",
+  "spec_index_pages": [
+    "complex.html",
+    "evaluate.html",
+    "grammar.html",
+    "inferred.html",
+    "literal.html",
+    "primitive.html",
+    "scope.html",
+    "system.html",
+    "token.html",
+    "types.html"
+  ],
+  "conformance_pages": [
+    "types.html",
+    "token.html",
+    "literal.html",
+    "grammar.html",
+    "scope.html",
+    "evaluate.html",
+    "primitive.html",
+    "inferred.html",
+    "complex.html",
+    "system.html"
+  ],
+  "summary": {
+    "spec": {
+      "tests_run": 470,
+      "pass_rate": 100.0,
+      "status": "pass"
+    },
+    "groups": [
+      {
+        "name": "runtime",
+        "tests_run": 126,
+        "pass_rate": 100.0,
+        "status": "pass"
+      },
+      {
+        "name": "jax-ir",
+        "tests_run": 21,
+        "pass_rate": 100.0,
+        "status": "pass"
+      },
+      {
+        "name": "diff-cbqn",
+        "tests_run": 1,
+        "pass_rate": 100.0,
+        "status": "pass"
+      }
+    ],
+    "strict_probes": [
+      {
+        "id": "token_word_requires_letter",
+        "page": "token.html",
+        "description": "Word names must include alphabetic content; `_99` is not a valid identifier.",
+        "source": "_99",
+        "expectation": "parse_error",
+        "observed": "parse_error",
+        "passed": true,
+        "error": "Invalid word name '_99' at index 0"
+      },
+      {
+        "id": "literal_char_no_backslash_escapes",
+        "page": "token.html",
+        "description": "Character literals require no escaping; backslash escapes should not be accepted as a char literal.",
+        "source": "'\\n'",
+        "expectation": "parse_error",
+        "observed": "parse_error",
+        "passed": true,
+        "error": "Character literal must contain exactly one code point at index 0"
+      },
+      {
+        "id": "grammar_header_allows_lhscomp_list",
+        "page": "grammar.html",
+        "description": "Case headers accept `LHS_COMP`, including list destructuring forms.",
+        "source": "{\u27e8x\u22c4y\u27e9: x+y}",
+        "expectation": "parse_ok",
+        "observed": "parse_ok",
+        "passed": true,
+        "error": null
+      },
+      {
+        "id": "grammar_header_allows_lhscomp_strand",
+        "page": "grammar.html",
+        "description": "Case headers accept strand destructuring forms.",
+        "source": "{x\u203fy: x+y}",
+        "expectation": "parse_ok",
+        "observed": "parse_ok",
+        "passed": true,
+        "error": null
+      },
+      {
+        "id": "grammar_general_case_order",
+        "page": "grammar.html",
+        "description": "A general body cannot appear before a non-general body in a block.",
+        "source": "{1; F x: x}",
+        "expectation": "parse_error",
+        "observed": "parse_error",
+        "passed": true,
+        "error": "General block case cannot appear before non-general case at span [10, 11); found RBRACE(})"
+      },
+      {
+        "id": "grammar_general_case_count_imm",
+        "page": "grammar.html",
+        "description": "Immediate blocks cannot contain multiple general bodies.",
+        "source": "{1;2}",
+        "expectation": "parse_error",
+        "observed": "parse_error",
+        "passed": true,
+        "error": "Immediate block cannot contain multiple general cases at span [4, 5); found RBRACE(})"
+      },
+      {
+        "id": "token_system_literal_must_be_defined",
+        "page": "token.html",
+        "description": "A system literal token is valid only if it matches a defined system value.",
+        "source": "\u2022unknown",
+        "expectation": "parse_error",
+        "observed": "parse_error",
+        "passed": true,
+        "error": "Undefined system value '\u2022unknown' at index 0"
+      },
+      {
+        "id": "token_identifier_role_function_uppercase",
+        "page": "token.html",
+        "description": "A lowercase identifier has subject role and must not parse as direct function call.",
+        "source": "f 1",
+        "expectation": "parse_error",
+        "observed": "parse_error",
+        "passed": true,
+        "error": "Unexpected token at span [2, 3); expected EOF; found NUMBER(1.0)"
+      },
+      {
+        "id": "token_identifier_role_function_uppercase_allowed",
+        "page": "token.html",
+        "description": "An uppercase identifier has function role and may parse as direct function call.",
+        "source": "F 1",
+        "expectation": "parse_ok",
+        "observed": "parse_ok",
+        "passed": true,
+        "error": null
+      },
+      {
+        "id": "grammar_monadic_header_omit_function_requires_non_name_argument",
+        "page": "grammar.html",
+        "description": "Monadic function header may omit function only when argument is not a plain name.",
+        "source": "{x: x+1}",
+        "expectation": "parse_error",
+        "observed": "parse_error",
+        "passed": true,
+        "error": "Monadic header without function requires a non-name argument at span [1, 2); found NAME(x)"
+      },
+      {
+        "id": "grammar_header_function_role_required",
+        "page": "grammar.html",
+        "description": "Function-header function token must use function role (uppercase identifier).",
+        "source": "{f x: x}",
+        "expectation": "parse_error",
+        "observed": "parse_error",
+        "passed": true,
+        "error": "Dyadic header requires an explicit function token at span [1, 2); found NAME(f)"
+      },
+      {
+        "id": "grammar_header_function_role_uppercase_allowed",
+        "page": "grammar.html",
+        "description": "Uppercase function-role identifier should be allowed in function header.",
+        "source": "{F x: x}",
+        "expectation": "parse_ok",
+        "observed": "parse_ok",
+        "passed": true,
+        "error": null
+      },
+      {
+        "id": "grammar_inference_header_undo_form",
+        "page": "grammar.html",
+        "description": "Inference header using \u207c should parse for function blocks.",
+        "source": "{F\u207cx: x}",
+        "expectation": "parse_ok",
+        "observed": "parse_ok",
+        "passed": true,
+        "error": null
+      },
+      {
+        "id": "grammar_inference_header_under_undo_form",
+        "page": "grammar.html",
+        "description": "Inference header using \u02dc\u207c should parse when left argument header is present.",
+        "source": "{w F\u02dc\u207cx: x}",
+        "expectation": "parse_ok",
+        "observed": "parse_ok",
+        "passed": true,
+        "error": null
+      }
+    ]
+  }
+}
