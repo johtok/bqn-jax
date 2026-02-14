@@ -1,0 +1,64 @@
+{
+  "results": "benchmarks/output/conformance/bench_md_candidate.json",
+  "baseline": "benchmarks/baselines/bench_md_top5_baseline.json",
+  "ratio_growth_limit": 1.3,
+  "absolute_growth_limit": 1.5,
+  "report_rows": [
+    {
+      "section": "modifier",
+      "name": "fold_plus",
+      "n": 10000,
+      "baseline_mean_ms": 0.0077856299751243785,
+      "current_mean_ms": 0.00885086272872058,
+      "baseline_ratio": 2.9990492126218027,
+      "current_ratio": 2.8147508266885586,
+      "ratio_growth": 0.9385477286742726,
+      "absolute_growth": 1.1368203673947634
+    },
+    {
+      "section": "dyadic",
+      "name": "minus",
+      "n": 10000,
+      "baseline_mean_ms": 0.005436595166628882,
+      "current_mean_ms": 0.00530323159451104,
+      "baseline_ratio": 2.0941935984520477,
+      "current_ratio": 1.6865333891500334,
+      "ratio_growth": 0.8053378591151544,
+      "absolute_growth": 0.9754692839855982
+    },
+    {
+      "section": "dyadic",
+      "name": "divide",
+      "n": 10000,
+      "baseline_mean_ms": 0.005246430833112933,
+      "current_mean_ms": 0.005831712021632757,
+      "baseline_ratio": 2.0209416976396604,
+      "current_ratio": 1.8546007024417182,
+      "ratio_growth": 0.9176913438956609,
+      "absolute_growth": 1.1115579728652503
+    },
+    {
+      "section": "dyadic",
+      "name": "times",
+      "n": 10000,
+      "baseline_mean_ms": 0.00502277354499662,
+      "current_mean_ms": 0.00555868512427212,
+      "baseline_ratio": 1.9347882051200473,
+      "current_ratio": 1.7677727051482661,
+      "ratio_growth": 0.9136776317274384,
+      "absolute_growth": 1.1066963450520961
+    },
+    {
+      "section": "monadic",
+      "name": "transpose",
+      "n": 10000,
+      "baseline_mean_ms": 0.004511964968870854,
+      "current_mean_ms": 0.005036701465099953,
+      "baseline_ratio": 1.7380231311407934,
+      "current_ratio": 1.6017714936047716,
+      "ratio_growth": 0.9216053946033561,
+      "absolute_growth": 1.1162988852638227
+    }
+  ],
+  "violations": []
+}

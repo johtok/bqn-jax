@@ -1,0 +1,165 @@
+{
+  "flat_exp_range": [
+    8,
+    11
+  ],
+  "matrix_exp_range": [
+    3,
+    6
+  ],
+  "thresholds": {
+    "times_plus": {
+      "max_time_growth": 4.0,
+      "max_ns_per_element_growth": 3.0,
+      "max_ns_per_element": 30000.0
+    },
+    "sum": {
+      "max_time_growth": 4.0,
+      "max_ns_per_element_growth": 3.0,
+      "max_ns_per_element": 60000.0
+    },
+    "matrix_plus": {
+      "max_time_growth": 8.0,
+      "max_ns_per_element_growth": 3.5,
+      "max_ns_per_element": 50000.0
+    },
+    "reshape_square": {
+      "max_time_growth": 8.0,
+      "max_ns_per_element_growth": 4.0,
+      "max_ns_per_element": 150000.0
+    },
+    "sort_up": {
+      "max_time_growth": 6.0,
+      "max_ns_per_element_growth": 4.0,
+      "max_ns_per_element": 300000.0
+    }
+  },
+  "metrics": [
+    {
+      "name": "times_plus",
+      "mode": "compiled",
+      "size_kind": "flat",
+      "sizes": [
+        256,
+        512,
+        1024,
+        2048
+      ],
+      "seconds": [
+        5.712100028176792e-06,
+        1.1345050006639213e-05,
+        8.156649982993258e-06,
+        1.203984998028318e-05
+      ],
+      "ns_per_element": [
+        22.312890735065594,
+        22.15830079421721,
+        7.965478499016854,
+        5.878832998185146
+      ],
+      "max_time_growth": 1.986143441234583,
+      "max_ns_per_element_growth": 0.9930717206172915
+    },
+    {
+      "name": "sum",
+      "mode": "compiled",
+      "size_kind": "flat",
+      "sizes": [
+        256,
+        512,
+        1024,
+        2048
+      ],
+      "seconds": [
+        4.7011999868118435e-06,
+        3.337699990879628e-06,
+        9.646399985285824e-06,
+        1.0936299986497033e-05
+      ],
+      "ns_per_element": [
+        18.364062448483764,
+        6.518945294686773,
+        9.420312485630689,
+        5.339990227781755
+      ],
+      "max_time_growth": 2.890133928047734,
+      "max_ns_per_element_growth": 1.4450669640238671
+    },
+    {
+      "name": "matrix_plus",
+      "mode": "compiled",
+      "size_kind": "matrix",
+      "sizes": [
+        8,
+        16,
+        32,
+        64
+      ],
+      "seconds": [
+        8.174650020009722e-06,
+        3.906749998350278e-06,
+        6.418400016627857e-06,
+        7.511400008297642e-06
+      ],
+      "ns_per_element": [
+        127.7289065626519,
+        15.260742181055775,
+        6.267968766238141,
+        1.8338378926507914
+      ],
+      "max_time_growth": 1.642900113736017,
+      "max_ns_per_element_growth": 0.4107250284340042
+    },
+    {
+      "name": "reshape_square",
+      "mode": "evaluate",
+      "size_kind": "matrix",
+      "sizes": [
+        8,
+        16,
+        32,
+        64
+      ],
+      "seconds": [
+        3.822085000138031e-05,
+        3.728259998752037e-05,
+        3.7533550039370314e-05,
+        3.856749999613385e-05
+      ],
+      "ns_per_element": [
+        597.2007812715674,
+        145.63515620125145,
+        36.65385746032257,
+        9.415893553743615
+      ],
+      "max_time_growth": 1.0275473531195154,
+      "max_ns_per_element_growth": 0.25688683827987885
+    },
+    {
+      "name": "sort_up",
+      "mode": "evaluate",
+      "size_kind": "flat",
+      "sizes": [
+        256,
+        512,
+        1024,
+        2048
+      ],
+      "seconds": [
+        6.355085001814586e-05,
+        6.0457550034698215e-05,
+        7.56271999762248e-05,
+        3.995660003965895e-05
+      ],
+      "ns_per_element": [
+        248.2455078833823,
+        118.08115241151995,
+        73.85468747678203,
+        19.510058613114722
+      ],
+      "max_time_growth": 1.2509140700015187,
+      "max_ns_per_element_growth": 0.6254570350007593
+    }
+  ],
+  "violations": []
+}

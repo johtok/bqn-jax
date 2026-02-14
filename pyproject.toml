@@ -1,0 +1,84 @@
+[project]
+name = "bqn-jax"
+version = "0.1.0"
+description = "A staged BQN subset interpreter implemented on top of JAX."
+readme = "README.md"
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64", "win-64"]
+preview = ["pixi-build"]
+
+[tool.pixi.package]
+name = "bqn-jax"
+version = "0.1.0"
+
+[tool.pixi.package.build]
+backend = { name = "pixi-build-python", version = "*", channels = ["https://prefix.dev/pixi-build-backends", "conda-forge"] }
+
+[tool.pixi.package.host-dependencies]
+python = ">=3.10"
+pip = ">=24.0"
+setuptools = ">=68"
+wheel = ">=0.43"
+
+[tool.pixi.package.run-dependencies]
+python = ">=3.10"
+jax = ">=0.4.30"
+
+[tool.pixi.dependencies]
+jax=">0.4.30"
+
+[tool.pixi.pypi-dependencies]
+jax = { version = ">=0.4.30", extras = ["cpu"] }
+quax = ">=0.1.0"
+chex = ">=0.1.90"
+jaxtyping = ">=0.3.0"
+
+[tool.pixi.feature.test.pypi-dependencies]
+pytest = ">=8.0.0"
+
+[tool.pixi.feature.test.tasks]
+test = "PYTHONPATH=src python -m unittest discover -s tests -v"
+
+[tool.pixi.environments]
+test = ["test"]
+
+[tool.pixi.tasks]
+lint = "python -m py_compile src/bqn_jax/*.py tests/*.py scripts/*.py benchmarks/*.py"
+bench = "PYTHONPATH=src OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NUMEXPR_NUM_THREADS=1 JAX_NUM_THREADS=1 BQN_JAX_BENCH_CPU_AFFINITY=0 python benchmarks/perf_benchmarks.py"
+bench-valence = "PYTHONPATH=src OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NUMEXPR_NUM_THREADS=1 JAX_NUM_THREADS=1 BQN_JAX_BENCH_CPU_AFFINITY=0 python benchmarks/valence_benchmarks.py"
+bench-workloads = "PYTHONPATH=src OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NUMEXPR_NUM_THREADS=1 JAX_NUM_THREADS=1 BQN_JAX_BENCH_CPU_AFFINITY=0 python benchmarks/jax_workloads.py"
+bench-md = "PYTHONPATH=src OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NUMEXPR_NUM_THREADS=1 JAX_NUM_THREADS=1 BQN_JAX_BENCH_CPU_AFFINITY=0 python benchmarks/monad_dyad_benchmarks.py"
+bench-md-shape = "PYTHONPATH=src OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NUMEXPR_NUM_THREADS=1 JAX_NUM_THREADS=1 BQN_JAX_BENCH_CPU_AFFINITY=0 python benchmarks/monad_dyad_benchmarks.py --shape-specialized"
+bench-md-trends = "PYTHONPATH=src python scripts/bench_md_trends.py"
+bench-scale = "PYTHONPATH=src python benchmarks/scaling_benchmarks.py"
+bench-ds = "PYTHONPATH=src python benchmarks/ds_pipeline_benchmarks.py"
+bench-boxed = "PYTHONPATH=src python benchmarks/boxed_paths_benchmarks.py"
+bench-bencharray = "PYTHONPATH=src python benchmarks/bencharray_recreated.py"
+bench-gate = "PYTHONPATH=src python scripts/benchmark_stability_gate.py"
+bench-md-gate = "PYTHONPATH=src OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NUMEXPR_NUM_THREADS=1 JAX_NUM_THREADS=1 BQN_JAX_BENCH_CPU_AFFINITY=0 python scripts/bench_md_top5_gate.py --run-benchmark --results benchmarks/output/conformance/bench_md_candidate.json --baseline benchmarks/baselines/bench_md_top5_baseline.json --ratio-growth-limit 1.30 --absolute-growth-limit 1.50 --cv-growth-limit 1.75 --max-cv-pct 20 --min-sample-ratio 1.0 --enforce-host-contract"
+bench-compile-gate = "PYTHONPATH=src OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NUMEXPR_NUM_THREADS=1 JAX_NUM_THREADS=1 BQN_JAX_BENCH_CPU_AFFINITY=0 python scripts/perf_compile_gate.py --run-benchmark --results benchmarks/output/conformance/perf_compile_candidate.json --baseline benchmarks/baselines/perf_compile_baseline.json --growth-limit 1.50 --enforce-host-contract"
+perf-snapshot = "PYTHONPATH=src python scripts/ci_perf_snapshot.py"
+conformance = "PYTHONPATH=src python scripts/spec_conformance_runner.py"
+cbqn-catalog = "PYTHONPATH=src python scripts/cbqn_catalog_report.py"
+ci-dashboard = "PYTHONPATH=src python scripts/ci_pass_dashboard.py"
+spec-audit = "PYTHONPATH=src python scripts/spec_full_audit.py"
+spec-audit-strict = "PYTHONPATH=src python scripts/spec_full_audit.py --strict"
+mlp = "PYTHONPATH=src python scripts/simple_mlp_jaxbqn.py"
