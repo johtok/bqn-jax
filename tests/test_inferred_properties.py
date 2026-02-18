@@ -67,8 +67,11 @@ class InferredPropertiesTests(unittest.TestCase):
         counts = [0, 1, 2, 5, -1, -2, -5]
         for count in counts:
             with self.subTest(count=count):
-                lhs = evaluate(f"{count} ↑ ({count} ↑ 1‿2)")
-                rhs = evaluate(f"{count} ↑ 1‿2")
+                # Use BQN ¯ for negative literals; Python's - would be
+                # monadic negate that consumes the entire right expression.
+                bqn_count = str(count).replace("-", "¯")
+                lhs = evaluate(f"{bqn_count} ↑ ({bqn_count} ↑ 1‿2)")
+                rhs = evaluate(f"{bqn_count} ↑ 1‿2")
                 self._assert_close(lhs, rhs)
 
     def test_fill_defaults_for_nudges(self) -> None:

@@ -244,7 +244,7 @@ def _normalize_identifier_name(name: str) -> str:
 
 
 class Scope(MutableMapping[str, object]):
-    def __init__(self, data: MutableMapping[str, object] | None = None, parent: "Scope | None" = None) -> None:
+    def __init__(self, data: MutableMapping[str, object] | None = None, parent: "Scope | None" = None, *, allow_redefinition: bool = False) -> None:
         self.data: dict[str, object] = {}
         self.parent = parent
         self._raw_by_norm: dict[str, str] = {}
@@ -252,6 +252,7 @@ class Scope(MutableMapping[str, object]):
         self.definitions: set[str] = set()
         self.exports: set[str] = set()
         self.namespace_requested: bool = False
+        self.allow_redefinition: bool = allow_redefinition
 
         if data is not None:
             for key, value in data.items():
@@ -342,7 +343,7 @@ class Scope(MutableMapping[str, object]):
 
     def define(self, key: str, value: object) -> None:
         norm = _normalize_identifier_name(key)
-        if norm in self.definitions:
+        if norm in self.definitions and not self.allow_redefinition:
             raise NameError(f"Duplicate definition for name {key!r} in the same scope")
         self[key] = value
         self.definitions.add(norm)
@@ -382,7 +383,7 @@ class EvaluationEnvironment(MutableMapping[str, object]):
         seed_env = {} if data is None else dict(data)
         for name, value in seed_env.items():
             validate_bqn_value(value, where=f"env[{name!r}]")
-        self._scope = Scope(data=seed_env)
+        self._scope = Scope(data=seed_env, allow_redefinition=True)
 
     def __getitem__(self, key: str) -> object:
         return self._scope[key]
@@ -805,9 +806,32 @@ def _pack_vector(items) -> object:
     return boxed
 
 
+def _pack_vector_literal(items) -> object:
+    """Pack items from a BQN vector literal (⟨⟩ or ‿).
+
+    Only stacks 0-d scalar arrays; higher-dimensional items stay as a
+    BoxedArray so that pervasive binary ops get list-level agreement
+    instead of broadcasting along a stacked matrix axis.
+    """
+    if not items:
+        return jnp.asarray([])
+
+    if all(isinstance(x, jnp.ndarray) for x in items):
+        arrays = [x for x in items]
+        first_shape = arrays[0].shape
+        if first_shape == () and all(arr.shape == () for arr in arrays):
+            return jnp.stack(arrays, axis=0)
+    boxed = BoxedArray(items)
+    validate_bqn_value(boxed, where="boxed vector")
+    return boxed
+
+
 def _map_unary(fn, value):
     if isinstance(value, list):
-        return _pack_vector([_map_unary(fn, item) for item in value])
+        # Preserve list (BoxedArray) structure -- BQN lists stay lists
+        # through pervasive operations; they do not collapse into
+        # higher-rank JAX arrays.
+        return BoxedArray([_map_unary(fn, item) for item in value])
     return fn(value)
 
 
@@ -815,11 +839,11 @@ def _map_binary(fn, left, right):
     if isinstance(left, list) and isinstance(right, list):
         if len(left) != len(right):
             raise ValueError("Mismatched boxed list lengths for dyadic operation")
-        return _pack_vector([_map_binary(fn, l_item, r_item) for l_item, r_item in zip(left, right, strict=True)])
+        return BoxedArray([_map_binary(fn, l_item, r_item) for l_item, r_item in zip(left, right, strict=True)])
     if isinstance(left, list):
-        return _pack_vector([_map_binary(fn, l_item, right) for l_item in left])
+        return BoxedArray([_map_binary(fn, l_item, right) for l_item in left])
     if isinstance(right, list):
-        return _pack_vector([_map_binary(fn, left, r_item) for r_item in right])
+        return BoxedArray([_map_binary(fn, left, r_item) for r_item in right])
     return fn(left, right)
 
 
@@ -1052,6 +1076,20 @@ def _eval_prefix(op: str, right):
         return _occurrence_count(right)
     if op == "⍷":
         return _deduplicate(right)
+    if op == "∾":
+        return _join_monadic(right)
+    if op == "⊑":
+        # Monadic ⊑ — First.  Returns the first element.
+        if isinstance(right, list):
+            if not right:
+                raise ValueError("⊑ on empty list")
+            return right[0]
+        arr = _as_array(right)
+        if arr.ndim == 0:
+            return arr
+        if arr.shape[0] == 0:
+            raise ValueError("⊑ on empty array")
+        return arr[0]
 
     raise ValueError(f"Unsupported monadic primitive {op!r}")
 
@@ -1288,6 +1326,19 @@ def _bins(left, right, *, reverse: bool):
     if right_is_scalar:
         return jnp.asarray(out[0], dtype=jnp.int32)
     return jnp.asarray(out, dtype=jnp.int32)
+
+
+def _join_monadic(right):
+    """Monadic ∾ (Join): concatenate all elements of a list."""
+    if isinstance(right, list):
+        if len(right) == 0:
+            return jnp.asarray([], dtype=jnp.int32)
+        result = right[0]
+        for item in right[1:]:
+            result = _concat(result, item)
+        return result
+    # On a plain array, monadic Join is identity (already flat).
+    return _as_array(right)
 
 
 def _concat(left, right):
@@ -2736,6 +2787,20 @@ def _apply_callable(func_value, right_value, *, left_value=_MISSING):
 
         if len(func_value.parts) == 3:
             left_func, center_func, right_func = func_value.parts
+            # Nothing (·) as left element: behaves as an atop (2-train).
+            if left_func is _MISSING:
+                if left_value is _MISSING:
+                    right_result = _apply_callable(right_func, right_value)
+                else:
+                    right_result = _apply_callable(right_func, right_value, left_value=left_value)
+                return _apply_callable(center_func, right_result)
+            # Non-callable left element (subject-left fork): constant left.
+            if not _is_callable_value(left_func):
+                if left_value is _MISSING:
+                    right_result = _apply_callable(right_func, right_value)
+                else:
+                    right_result = _apply_callable(right_func, right_value, left_value=left_value)
+                return _apply_callable(center_func, right_result, left_value=left_func)
             if left_value is _MISSING:
                 right_result = _apply_callable(right_func, right_value)
                 left_result = _apply_callable(left_func, right_value)
@@ -2758,6 +2823,9 @@ def _apply_callable(func_value, right_value, *, left_value=_MISSING):
                 return _scan_callable(func_value.operand, right_value)
             return _scan_callable(func_value.operand, right_value, init=left_value)
         if func_value.op == "˜":
+            if not _is_callable_value(func_value.operand):
+                # Non-callable operand: value˜ acts as a constant function.
+                return func_value.operand
             if left_value is _MISSING:
                 # Self: monadic call x -> x F x.
                 return _apply_callable(func_value.operand, right_value, left_value=right_value)
@@ -2871,14 +2939,20 @@ def _apply_callable(func_value, right_value, *, left_value=_MISSING):
             return _apply_callable(func_value.left, gx, left_value=gw)
 
         if func_value.op == "⊸":
-            if left_value is _MISSING:
-                fw = _apply_callable(func_value.left, right_value)
+            if _is_callable_value(func_value.left):
+                if left_value is _MISSING:
+                    fw = _apply_callable(func_value.left, right_value)
+                else:
+                    fw = _apply_callable(func_value.left, left_value)
             else:
-                fw = _apply_callable(func_value.left, left_value)
+                fw = func_value.left
             return _apply_callable(func_value.right, right_value, left_value=fw)
 
         if func_value.op == "⟜":
-            gx = _apply_callable(func_value.right, right_value)
+            if _is_callable_value(func_value.right):
+                gx = _apply_callable(func_value.right, right_value)
+            else:
+                gx = func_value.right
             if left_value is _MISSING:
                 return _apply_callable(func_value.left, gx, left_value=right_value)
             return _apply_callable(func_value.left, gx, left_value=left_value)
@@ -3028,6 +3102,10 @@ def _eval_expr(expr: Expr, env: Scope) -> object:
     if isinstance(expr, Name):
         if expr.value in _PRIMITIVE_FUNCTION_GLYPHS:
             return PrimitiveFunction(op=expr.value)
+        # Modifier glyphs (˜, ¨, ∘, ⊸, etc.) used as first-class values.
+        if expr.value in {"˙", "˜", "¨", "˘", "⌜", "˝", "⁼", "´", "`",
+                          "∘", "○", "⊸", "⟜", "⊘", "◶", "⌾", "⎉", "⚇", "⍟", "⎊"}:
+            return PrimitiveFunction(op=expr.value)
         if expr.value in env:
             return env[expr.value]
         if expr.value == "i":
@@ -3043,7 +3121,7 @@ def _eval_expr(expr: Expr, env: Scope) -> object:
 
     if isinstance(expr, Vector):
         values = [_eval_expr(item, env) for item in expr.items]
-        return _pack_vector(values)
+        return _pack_vector_literal(values)
 
     if isinstance(expr, Nothing):
         return _MISSING

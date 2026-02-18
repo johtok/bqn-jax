@@ -51,6 +51,7 @@ python = ">=3.11,<3.13"
 jax = ">=0.4.30"
 chex = ">=0.1.90"
 jaxtyping = ">=0.3.0"
+bqn-jax = { path = ".", editable = true }
 
 [tool.pixi.target.win-64.pypi-dependencies]
 quax = ">=0.1.0"
@@ -71,6 +72,7 @@ test = "PYTHONPATH=src python -m unittest discover -s tests -v"
 [tool.pixi.feature.jupyter.pypi-dependencies]
 jupyterlab = ">=4.2.0"
 ipykernel = ">=6.29.0"
+matplotlib = ">=3.8.0"
 bqn-jax = { path = ".", editable = true }
 
 [tool.pixi.feature.jupyter.tasks]

@@ -14,7 +14,30 @@ https://mlochbaum.github.io/BQN/spec/index.html
 - BQN syntax support across parser/runtime with an extensive test suite.
 - One-shot and stateful evaluation APIs.
 - Compiled expressions with `.jit()`, `.grad()`, and `.vmap()` wrappers.
+- **Interactive tutorial notebooks** — walk through BQN on JAX step-by-step.
+- **MLP & gradient-descent demos** — real ML expressed entirely in nine BQN strings.
 - Pixi-first developer workflow with reproducible environments and tasks.
+
+## Notebooks & Demos
+
+Start here to see what `bqn-jax` can do.
+
+| Notebook | Description |
+|----------|-------------|
+| [Tutorial — Expressions](examples/tutorials/stateful/01_expressions.ipynb) | Arithmetic, comparison, and array basics |
+| [Tutorial — List Manipulation](examples/tutorials/stateful/02_list_manipulation.ipynb) | Reshape, take, drop, reverse, and more |
+| [Tutorial — Combinators](examples/tutorials/stateful/03_combinators.ipynb) | Trains, atop, over, and before/after |
+| [Tutorial — Variables](examples/tutorials/stateful/04_variables.ipynb) | Assignment, modification, and scope |
+| [**Gradient Descent Visual**](examples/gradient_descent_visual.ipynb) | Curve fitting with BQN polynomial + Adam optimizer — eight BQN expressions, loss landscape plots |
+| [**MLP Polynomial Regression**](examples/mlp_polynomial.ipynb) | Full MLP (1→16→1) with Adam optimizer — nine BQN expressions, zero Python math |
+| [MLP script](scripts/simple_mlp_jaxbqn.py) | CLI version of the MLP demo (`pixi run mlp`) |
+
+All notebooks run in the project's Jupyter environment:
+
+```bash
+pixi install -e jupyter
+pixi run -e jupyter jupyter-lab
+```
 
 ## Getting Started
 

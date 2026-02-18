@@ -48,6 +48,8 @@ MONADIC_PRIMITIVES = {
     "⊐",
     "⊒",
     "⍷",
+    "∾",
+    "⊑",
 }
 
 DYADIC_PRIMITIVES = {
@@ -135,6 +137,8 @@ PRIMITIVE_MATRIX_CASES = (
     MatrixCase("⊐", "monadic", "vector", "⊐ 3‿1‿3‿2‿1"),
     MatrixCase("⊒", "monadic", "vector", "⊒ 3‿1‿3‿2‿1‿3"),
     MatrixCase("⍷", "monadic", "vector", "⍷ 3‿1‿3‿2‿1"),
+    MatrixCase("∾", "monadic", "vector", "∾ ⟨1‿2⋄3‿4⟩"),
+    MatrixCase("⊑", "monadic", "vector", "⊑ 10‿20‿30"),
     MatrixCase("!", "dyadic", "message-assert", '"ok" ! 1'),
     MatrixCase("+", "dyadic", "scalar-scalar", "2 + 3"),
     MatrixCase("-", "dyadic", "scalar-scalar", "7 - 2"),

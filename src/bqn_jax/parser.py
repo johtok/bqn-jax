@@ -56,6 +56,8 @@ _MONADIC_OPS = {
     "⊐",
     "⊒",
     "⍷",
+    "∾",
+    "⊑",
 }
 _DYADIC_OPS = {
     "+",
@@ -204,7 +206,7 @@ class _Parser:
         return primitive is not None and primitive in _MONADIC_OPS
 
     def _can_start_application_arg(self, tok: Token) -> bool:
-        return tok.kind in {"NUMBER", "CHAR", "STRING", "NULL", "NOTHING", "NAME", "LPAREN", "LANGLE", "LBRACK", "LBRACE"}
+        return self._can_start_prefix(tok)
 
     def _name_role(self, name: str) -> str:
         ident = name[1:] if name.startswith("•") else name
@@ -236,6 +238,20 @@ class _Parser:
     def _is_callable_expr(self, expr: Expr) -> bool:
         return self._expr_is_function_role(expr)
 
+    def _is_definitely_callable(self, expr: Expr) -> bool:
+        """Like ``_is_callable_expr`` but excludes ``Call`` nodes.
+
+        A ``Call`` node (function application) can yield either a subject
+        or another function depending on the callee — this is unknowable
+        at parse time.  For the *monadic application* check we need to be
+        conservative: treating a subject-valued ``Call`` as callable would
+        cause  ``(+´ 1‿2) + (+´ 3‿4)``  to mis-parse because the ``+``
+        would be consumed as a monadic-application argument.
+        """
+        if isinstance(expr, Call):
+            return False
+        return self._is_callable_expr(expr)
+
     def _can_start_callable_token(self, tok: Token) -> bool:
         if tok.kind == "NAME":
             return self._name_is_function_role(tok.text)
@@ -262,6 +278,11 @@ class _Parser:
             self._advance()
             return Export()
 
+        # Try modified assignment: ``name F↩ [expr]``
+        mod_assign = self._try_parse_modified_assignment()
+        if mod_assign is not None:
+            return mod_assign
+
         left = self._parse_expression(0)
         if self._peek().kind == "ASSIGN":
             arrow = self._advance()
@@ -270,6 +291,68 @@ class _Parser:
             right = self._parse_statement()
             return Assign(op=arrow.text, left=left, right=right)
         return left
+
+    def _try_parse_modified_assignment(self) -> Expr | None:
+        """Try to parse ``target F↩ [expr]`` modified assignment.
+
+        Returns an ``Assign`` node that desugars the modified form::
+
+            a F↩ expr  →  a ↩ a F expr   (dyadic)
+            a F↩       →  a ↩ F a         (monadic)
+
+        Returns *None* (and resets position) if the tokens don't match.
+        """
+        if self._peek().kind != "NAME":
+            return None
+        # A Name immediately followed by ← / ↩ is a plain assignment,
+        # and a Name followed by STRAND (‿) is a destructuring target;
+        # neither is a modified assignment.
+        next_kind = self._peek_next().kind
+        if next_kind in {"ASSIGN", "STRAND"}:
+            return None
+        # The token after the Name must be something that can start a
+        # callable expression (primitive, paren, name, number for ⊸/⟜).
+        if not self._can_start_prefix(self._peek_next()):
+            return None
+
+        saved = self.index
+        target_tok = self._advance()
+        target = Name(value=target_tok.text)
+
+        # Parse the callable (function / derived modifier chain).
+        # Use _parse_callable_base + derivation loop so we don't consume
+        # monadic arguments that belong to the outer expression.
+        try:
+            callable_expr: Expr = self._parse_callable_base()
+            while True:
+                updated = self._parse_callable_derivation(callable_expr)
+                if updated is None:
+                    break
+                callable_expr = updated
+        except SyntaxError:
+            self.index = saved
+            return None
+
+        # Must be followed by ↩ (not ← — modified form only uses ↩).
+        if self._peek().kind != "ASSIGN" or self._peek().text != "↩":
+            self.index = saved
+            return None
+
+        self._advance()  # consume ↩
+
+        # Monadic (no RHS) vs dyadic (has RHS).
+        if self._peek().kind in {"SEP", "SEMI", "RBRACE", "EOF"}:
+            # a F↩  →  a ↩ F a
+            return Assign(
+                op="↩", left=target,
+                right=Call(func=callable_expr, right=target, left=None),
+            )
+        # a F↩ expr  →  a ↩ a F expr
+        rhs = self._parse_statement()
+        return Assign(
+            op="↩", left=target,
+            right=Call(func=callable_expr, left=target, right=rhs),
+        )
 
     def _parse_expression(self, min_bp: int) -> Expr:
         left = self._parse_prefix()
@@ -290,11 +373,20 @@ class _Parser:
             peek_primitive = self._as_primitive(peek_tok)
             # Permit dyadic application with derived primitive functions such as -˜ or ⋆⁼.
             # Keep the +´/×´ infix fold path by excluding PRIM_MOD1 ´ here.
+            # Also treat F´∘… as a modified callable (fold composed with
+            # another function) so the dyadic-application path parses
+            # the whole derivation instead of the infix-fold path.
+            _after_fold_is_mod2 = (
+                peek_next_tok.kind == "PRIM_MOD1" and peek_next_tok.text == "´"
+                and (self.index + 2) < len(self.tokens)
+                and self.tokens[self.index + 2].kind == "PRIM_MOD2"
+            )
             starts_modified_primitive_callable = (
                 peek_primitive is not None
                 and (
                     (peek_next_tok.kind == "PRIM_MOD1" and peek_next_tok.text != "´")
                     or peek_next_tok.kind == "PRIM_MOD2"
+                    or _after_fold_is_mod2
                 )
             )
 
@@ -312,7 +404,7 @@ class _Parser:
                     func_candidate = self._parse_callable_term()
                     func_candidate = self._parse_train_tail(func_candidate)
                     if self._is_callable_expr(func_candidate) and self._can_start_application_arg(self._peek()):
-                        right_arg = self._parse_prefix()
+                        right_arg = self._parse_expression(0)
                         left = Call(func=func_candidate, left=left, right=right_arg)
                         continue
                 except SyntaxError:
@@ -320,8 +412,8 @@ class _Parser:
                 self.index = save
 
             # Monadic application: F 𝕩
-            if min_bp <= 15 and self._is_callable_expr(left) and self._can_start_application_arg(self._peek()):
-                right_arg = self._parse_prefix()
+            if min_bp <= 15 and self._is_definitely_callable(left) and self._can_start_application_arg(self._peek()):
+                right_arg = self._parse_expression(0)
                 left = Call(func=left, right=right_arg)
                 continue
 
@@ -330,7 +422,13 @@ class _Parser:
             if primitive is None:
                 break
 
-            is_fold = self._peek_next().kind == "PRIM_MOD1" and self._peek_next().text == "´"
+            is_fold = (
+                self._peek_next().kind == "PRIM_MOD1" and self._peek_next().text == "´"
+                and not (
+                    (self.index + 2) < len(self.tokens)
+                    and self.tokens[self.index + 2].kind == "PRIM_MOD2"
+                )
+            )
             op_name = f"´{primitive}" if is_fold else primitive
             if primitive not in _DYADIC_OPS:
                 break
@@ -356,6 +454,124 @@ class _Parser:
         right = self._build_train_expr(terms[2:]) if len(terms) > 3 else terms[2]
         return Train(parts=(terms[0], terms[1], right))
 
+    def _try_parse_paren_train(self) -> Expr | None:
+        """Try to parse the contents of (...) as a train of callable terms.
+
+        Returns the Train AST node if successful, or ``None`` (with the
+        index restored to just after the opening paren) if the contents
+        don't form a valid train.
+
+        A valid train has >= 2 terms.  All terms except possibly the
+        first must be callable (primitive, derived, block, train) or
+        ``·`` (Nothing).  The first term may be a subject (for a
+        subject-left fork such as ``(@+G)``).
+        """
+        save = self.index
+        try:
+            terms: list[Expr] = []
+            while self._peek().kind != "RPAREN":
+                if self._peek().kind == "EOF":
+                    self.index = save
+                    return None
+                term = self._parse_train_element()
+                terms.append(term)
+            self._expect("RPAREN")
+            if len(terms) < 2:
+                self.index = save
+                return None
+            # All terms after the first must be callable or Nothing (·).
+            for t in terms[1:]:
+                if not (self._is_callable_expr(t) or isinstance(t, Nothing)):
+                    self.index = save
+                    return None
+            return self._build_train_expr(terms)
+        except SyntaxError:
+            self.index = save
+            return None
+
+    def _parse_train_element(self) -> Expr:
+        """Parse a single element of a train without monadic application.
+
+        This parses a function atom (primitive, name, paren sub-expr, or
+        block) and applies any modifier derivations, but does NOT allow
+        the element to consume further tokens via monadic application.
+        """
+        tok = self._peek()
+
+        # Nothing (·) — placeholder in trains
+        if tok.kind == "NOTHING":
+            self._advance()
+            return Nothing()
+
+        # Null (@), numbers, chars, strings — subjects allowed as first element
+        if tok.kind == "NULL":
+            self._advance()
+            term: Expr = Null()
+            return self._apply_train_derivations(term)
+
+        if tok.kind == "NUMBER":
+            self._advance()
+            if "j" in tok.text:
+                term = Number(value=complex(tok.text))
+            else:
+                term = Number(value=float(tok.text))
+            return self._apply_train_derivations(term)
+
+        if tok.kind == "CHAR":
+            self._advance()
+            term = Char(value=tok.text)
+            return self._apply_train_derivations(term)
+
+        if tok.kind == "STRING":
+            self._advance()
+            term = String(value=tok.text)
+            return self._apply_train_derivations(term)
+
+        if tok.kind == "NAME":
+            self._advance()
+            term = Name(value=tok.text)
+            return self._apply_train_derivations(term)
+
+        # Parenthesised sub-expression (may itself be a train)
+        if tok.kind == "LPAREN":
+            self._advance()
+            train_sub = self._try_parse_paren_train()
+            if train_sub is not None:
+                term = train_sub
+            else:
+                term = self._parse_statement()
+                self._expect("RPAREN")
+            return self._apply_train_derivations(term)
+
+        # Block
+        if tok.kind == "LBRACE":
+            self._advance()
+            term = self._parse_block()
+            return self._apply_train_derivations(term)
+
+        # Primitive function / modifier token used as value
+        primitive = self._as_primitive(tok)
+        if primitive is not None:
+            self._advance()
+            term = Name(value=primitive)
+            return self._apply_train_derivations(term)
+
+        if tok.kind in {"PRIM_MOD1", "PRIM_MOD2"}:
+            self._advance()
+            term = Name(value=tok.text)
+            return self._apply_train_derivations(term)
+
+        raise SyntaxError(f"unexpected token in train: {tok.kind}")
+
+    def _apply_train_derivations(self, term: Expr) -> Expr:
+        """Apply modifier derivations (´, ˜, ∘, ⊸, …) to *term*."""
+        while True:
+            updated = self._parse_callable_derivation(term)
+            if updated is None:
+                break
+            term = updated
+        return term
+
     def _parse_train_tail(self, expr: Expr) -> Expr:
         if not self._is_callable_expr(expr):
             return expr
@@ -380,22 +596,24 @@ class _Parser:
     def _parse_callable_derivation(self, expr: Expr) -> Expr | None:
         if self._peek().kind == "PRIM_MOD1":
             mod_text = self._peek().text
-            if mod_text == "˙":
+            if mod_text in {"˙", "˜"}:
                 mod_tok = self._advance()
                 return Mod1(op=mod_tok.text, operand=expr)
             if mod_text in _MOD1_OPS and self._is_callable_expr(expr):
                 mod_tok = self._advance()
                 return Mod1(op=mod_tok.text, operand=expr)
 
-        if not self._is_callable_expr(expr):
-            return None
-
+        # 2-modifiers can take subject (non-callable) left operands,
+        # e.g. "ab"⊸∾ binds "ab" as the left argument to ∾.
         if self._peek().kind == "PRIM_MOD2" and self._peek().text in _MOD2_OPS:
             op_tok = self._advance()
             # 2-modifier derivation is left-associative and binds tighter than trains.
             # Its right operand is a single immediate subject/function term (not a train).
             right = self._parse_callable_base()
             return Mod2(op=op_tok.text, left=expr, right=right)
+
+        if not self._is_callable_expr(expr):
+            return None
 
         return None
 
@@ -430,10 +648,23 @@ class _Parser:
 
         if primitive is not None and primitive in _MONADIC_OPS:
             self._advance()
-            right = self._parse_prefix()
+            right = self._parse_expression(0)
             return Prefix(op=primitive, right=right)
 
-        return self._parse_strand()
+        result = self._parse_strand()
+
+        # Inline assignment: ``name ← expr`` or ``a‿b ← expr`` within an
+        # expression.  In BQN ``three ⋈ ten - three ← 3`` the ``three ← 3``
+        # is an inner assignment that returns 3.
+        # Exclude ⇐ (export) which is handled at statement level.
+        if (isinstance(result, (Name, Vector))
+                and self._peek().kind == "ASSIGN"
+                and self._peek().text != "⇐"):
+            arrow = self._advance()
+            right = self._parse_expression(0)
+            return Assign(op=arrow.text, left=result, right=right)
+
+        return result
 
     def _parse_strand(self) -> Expr:
         first = self._parse_atom()
@@ -484,6 +715,13 @@ class _Parser:
             return Name(value=tok.text)
 
         if self._match("LPAREN"):
+            # Try parsing as a train of callable terms first.
+            # In BQN, (F G H) where all terms are callable forms a train,
+            # not nested monadic application.  A leading subject is allowed
+            # (subject-left fork, e.g. @+G).
+            train_result = self._try_parse_paren_train()
+            if train_result is not None:
+                return train_result
             expr = self._parse_statement()
             self._expect("RPAREN")
             return expr
@@ -496,6 +734,11 @@ class _Parser:
 
         if self._match("LBRACE"):
             return self._parse_block()
+
+        # Allow modifier tokens as values (e.g. ∘ inside ⟨…⟩).
+        if tok.kind in {"PRIM_MOD1", "PRIM_MOD2"}:
+            self._advance()
+            return Name(value=tok.text)
 
         self._error(tok, expected=("NUMBER", "CHAR", "STRING", "NULL", "NOTHING", "NAME", "LPAREN", "LANGLE", "LBRACK", "LBRACE"))
         raise AssertionError("unreachable")
